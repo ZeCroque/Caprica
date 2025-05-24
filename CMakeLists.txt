@@ -91,8 +91,8 @@ endif()
 
 if(CAPRICA_STATIC_LIBRARY)
   
-  file(GLOB HEADER_FILES "Caprica/**/*.h")
-  file(GLOB SOURCE_FILES "Caprica/**/*.cpp")
+  file(GLOB_RECURSE HEADER_FILES "Caprica/**/*.h")
+  file(GLOB_RECURSE SOURCE_FILES "Caprica/**/*.cpp")
 
   add_library("${PROJECT_NAME}" STATIC ${HEADER_FILES} ${SOURCE_FILES})
   find_package(Boost COMPONENTS container REQUIRED)
