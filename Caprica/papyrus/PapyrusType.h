@@ -156,8 +156,6 @@ namespace fmt {
 template <>
 struct formatter<caprica::papyrus::PapyrusType> {
   constexpr auto parse(format_parse_context& ctx) {
-    if (ctx.begin() != ctx.end())
-      throw format_error("invalid format");
     return ctx.end();
   }
 
