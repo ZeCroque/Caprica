@@ -49,12 +49,6 @@ struct ChainedPool {
   void reset();
   size_t totalAllocatedBytes() const { return totalSize; }
 
-protected:
-  struct DestructionNode final {
-    void (*destructor)(void*) { nullptr };
-    DestructionNode* next { nullptr };
-  };
-
   struct Heap final {
     size_t allocedHeapSize;
     size_t freeBytes;
@@ -82,6 +76,12 @@ protected:
   private:
     friend ChainedPool;
     const Heap* curHeap { nullptr };
+  };
+
+protected:
+  struct DestructionNode final {
+    void (*destructor)(void*) { nullptr };
+    DestructionNode* next { nullptr };
   };
 
   size_t heapSize;

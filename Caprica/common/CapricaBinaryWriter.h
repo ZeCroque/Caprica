@@ -88,9 +88,8 @@ struct CapricaBinaryWriter {
     if (val.size())
       append(val.data(), val.size());
   }
-
-protected:
   allocators::ChainedPool strm { 1024 * 4 };
+protected:
 
   void append(const char* __restrict a, size_t size) {
     // ChainedPool will re-order large allocations, so disallow them.

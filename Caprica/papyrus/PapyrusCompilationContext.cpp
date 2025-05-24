@@ -48,7 +48,7 @@ void PapyrusCompilationNode::queueCompile() {
     case NodeType::PexReflection:
       return;
   }
-  jobManager->queueJob(&writeJob);
+  jobManager->queueJob(&compileJob);
 }
 
 void PapyrusCompilationNode::awaitWrite() {
@@ -136,7 +136,10 @@ std::string_view findScriptName(const std::string_view& data, const std::string_
 }
 
 void PapyrusCompilationNode::FilePreParseJob::run() {
-  parent->readJob.await();
+  if (!parent->skipRead)
+  {
+    parent->readJob.await();
+  }
   auto ext = FSUtils::extensionAsRef(parent->sourceFilePath);
   if (pathEq(ext, ".psc")) {
     parent->objectName = findScriptName(parent->readFileData, "scriptname");
@@ -250,7 +253,7 @@ void PapyrusCompilationNode::FileSemanticJob::run() {
 }
 
 static constexpr bool disablePexBuild = false;
-
+std::list<std::unique_ptr<pex::PexWriter>> PapyrusCompilationNode::pexFiles;
 void PapyrusCompilationNode::FileCompileJob::run() {
   parent->semanticJob.await();
   switch (parent->type) {
@@ -270,17 +273,8 @@ void PapyrusCompilationNode::FileCompileJob::run() {
         parent->pexWriter = new pex::PexWriter();
         parent->pexFile->write(*parent->pexWriter);
 
-        if (conf::Debug::dumpPexAsm) {
-          auto baseFileName = std::string(FSUtils::basenameAsRef(parent->sourceFilePath));
-          auto containingDir = std::filesystem::path(parent->outputDirectory);
-          if (!std::filesystem::exists(containingDir))
-            std::filesystem::create_directories(containingDir);
-          std::ofstream asmStrm(parent->outputDirectory + FSUtils::SEP + std::string(parent->baseName) + ".pas",
-                                std::ofstream::binary);
-          asmStrm.exceptions(std::ifstream::badbit | std::ifstream::failbit);
-          pex::PexAsmWriter asmWtr(asmStrm);
-          parent->pexFile->writeAsm(asmWtr);
-        }
+        auto& p = pexFiles.emplace_back();
+        p.reset(parent->pexWriter);
 
         delete parent->pexFile->alloc;
         parent->pexFile = nullptr;

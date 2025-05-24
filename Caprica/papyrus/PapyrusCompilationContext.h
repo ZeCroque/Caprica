@@ -35,7 +35,8 @@ struct PapyrusCompilationNode final {
                          std::string&& absolutePath,
                          time_t lastMod,
                          size_t fileSize,
-                         bool strictNS)
+                         bool strictNS,
+                         bool skipRead = false)
       : reportedName(std::move(sourcePath)),
         baseOutputDirectory(std::move(baseOutputDir)),
         sourceFilePath(std::move(absolutePath)),
@@ -44,7 +45,8 @@ struct PapyrusCompilationNode final {
         reportingContext(reportedName),
         jobManager(mgr),
         type(compileType),
-        strictNS(strictNS) {
+        strictNS(strictNS),
+        skipRead(skipRead){
 
     // set the output directory
     if (reportedName.find_last_of("\\/") != std::string::npos)
@@ -56,7 +58,8 @@ struct PapyrusCompilationNode final {
     // TODO: fix Imports hack
     if (type == NodeType::PapyrusImport)
       reportingContext.m_QuietWarnings = true;
-    jobManager->queueJob(&readJob);
+    if(!skipRead)
+      jobManager->queueJob(&readJob);
   }
 
   ~PapyrusCompilationNode() {
@@ -84,8 +87,8 @@ struct PapyrusCompilationNode final {
   void awaitWrite();
 
   NodeType getType() const;
+  static std::list<std::unique_ptr<pex::PexWriter>> pexFiles;
 
-private:
   struct BaseJob : public CapricaJob {
     BaseJob(PapyrusCompilationNode* par) : parent(par) { }
 
@@ -112,6 +115,7 @@ private:
   CapricaReportingContext reportingContext;
   PapyrusResolutionContext* resolutionContext { nullptr };
   CapricaJobManager* jobManager;
+  bool skipRead = false;
 
   struct FileReadJob final : public BaseJob {
     using BaseJob::BaseJob;

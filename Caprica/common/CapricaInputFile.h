@@ -18,7 +18,6 @@ struct IInputFile {
   IInputFile(const std::filesystem::path& _path, bool noRecurse = true, const std::filesystem::path& _cwd = "");
   virtual ~IInputFile() = default;
 
-protected:
   bool noRecurse = true;
   const std::filesystem::path rawPath;
   const std::filesystem::path cwd;
