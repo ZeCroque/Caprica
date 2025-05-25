@@ -56,7 +56,22 @@ struct PapyrusCompilationNode final {
     // TODO: fix Imports hack
     if (type == NodeType::PapyrusImport)
       reportingContext.m_QuietWarnings = true;
-    jobManager->queueJob(&readJob);
+    if(!skipIO)
+      jobManager->queueJob(&readJob);
+  }
+
+  PapyrusCompilationNode(CapricaJobManager* mgr,
+                         const std::string& scriptName,
+                         const std::string_view& scriptData)
+      : type(NodeType::PapyrusCompile),
+        filesize(scriptData.size()),
+        lastModTime(0),
+        sourceFilePath(scriptName + ".psc"),
+        readFileData(scriptData),
+        reportingContext(reportedName),
+        jobManager(mgr),
+        skipIO(true){
+     baseName = FSUtils::basenameAsRef(sourceFilePath);
   }
 
   ~PapyrusCompilationNode() {
@@ -84,6 +99,7 @@ struct PapyrusCompilationNode final {
   void awaitWrite();
 
   NodeType getType() const;
+  const allocators::ChainedPool& getData() const;
 
 private:
   struct BaseJob : public CapricaJob {
@@ -112,6 +128,7 @@ private:
   CapricaReportingContext reportingContext;
   PapyrusResolutionContext* resolutionContext { nullptr };
   CapricaJobManager* jobManager;
+  bool skipIO = false;
 
   struct FileReadJob final : public BaseJob {
     using BaseJob::BaseJob;

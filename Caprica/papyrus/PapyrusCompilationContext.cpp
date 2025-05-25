@@ -67,6 +67,10 @@ PapyrusCompilationNode::NodeType PapyrusCompilationNode::getType() const {
   return type;
 }
 
+const allocators::ChainedPool& PapyrusCompilationNode::getData() const {
+  return pexWriter->getData();
+}
+
 allocators::AtomicChainedPool readAllocator { 1024 * 1024 * 4 };
 void PapyrusCompilationNode::FileReadJob::run() {
   if (parent->type == NodeType::PapyrusCompile || parent->type == NodeType::PasCompile ||
@@ -136,7 +140,10 @@ std::string_view findScriptName(const std::string_view& data, const std::string_
 }
 
 void PapyrusCompilationNode::FilePreParseJob::run() {
-  parent->readJob.await();
+  if (!parent->skipIO)
+  {
+    parent->readJob.await();
+  }
   auto ext = FSUtils::extensionAsRef(parent->sourceFilePath);
   if (pathEq(ext, ".psc")) {
     parent->objectName = findScriptName(parent->readFileData, "scriptname");
@@ -326,34 +333,36 @@ void PapyrusCompilationNode::FileCompileJob::run() {
 
 void PapyrusCompilationNode::FileWriteJob::run() {
   parent->compileJob.await();
-  switch (parent->type) {
-    case NodeType::PasCompile:
-    case NodeType::PapyrusCompile: {
-      if (!conf::Performance::performanceTestMode) {
-        auto baseFileName = std::string(FSUtils::basenameAsRef(parent->sourceFilePath));
-        auto containingDir = std::filesystem::path(parent->outputDirectory);
-        if (!std::filesystem::exists(containingDir))
-          std::filesystem::create_directories(containingDir);
-        std::ofstream destFile { parent->outputDirectory + FSUtils::SEP + baseFileName + ".pex",
-                                 std::ifstream::binary };
-        destFile.exceptions(std::ifstream::badbit | std::ifstream::failbit);
-        parent->pexWriter->applyToBuffers([&](const char* data, size_t size) { destFile.write(data, size); });
+  if(!parent->skipIO){
+    switch (parent->type) {
+      case NodeType::PasCompile:
+      case NodeType::PapyrusCompile: {
+        if (!conf::Performance::performanceTestMode) {
+          auto baseFileName = std::string(FSUtils::basenameAsRef(parent->sourceFilePath));
+          auto containingDir = std::filesystem::path(parent->outputDirectory);
+          if (!std::filesystem::exists(containingDir))
+            std::filesystem::create_directories(containingDir);
+          std::ofstream destFile { parent->outputDirectory + FSUtils::SEP + baseFileName + ".pex",
+                                   std::ifstream::binary };
+          destFile.exceptions(std::ifstream::badbit | std::ifstream::failbit);
+          parent->pexWriter->applyToBuffers([&](const char* data, size_t size) { destFile.write(data, size); });
+        }
+        delete parent->pexWriter;
+        parent->pexWriter = nullptr;
+        return;
       }
-      delete parent->pexWriter;
-      parent->pexWriter = nullptr;
-      return;
+      // TODO: remove this hack
+      case NodeType::PapyrusImport:
+      case NodeType::PexDissassembly:
+      case NodeType::PasReflection:
+      case NodeType::PexReflection:
+        return;
+      case NodeType::Unknown:
+      default:
+        break;
     }
-    // TODO: remove this hack
-    case NodeType::PapyrusImport:
-    case NodeType::PexDissassembly:
-    case NodeType::PasReflection:
-    case NodeType::PexReflection:
-      return;
-    case NodeType::Unknown:
-    default:
-      break;
+    CapricaReportingContext::logicalFatal("You shouldn't be trying to compile this!");
   }
-  CapricaReportingContext::logicalFatal("You shouldn't be trying to compile this!");
 }
 
 namespace {

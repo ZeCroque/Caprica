@@ -89,6 +89,10 @@ struct CapricaBinaryWriter {
       append(val.data(), val.size());
   }
 
+  const allocators::ChainedPool& getData() const {
+    return strm;
+  }
+
 protected:
   allocators::ChainedPool strm { 1024 * 4 };
 
