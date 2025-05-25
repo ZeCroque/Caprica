@@ -168,7 +168,11 @@ private:
 struct PapyrusCompilationContext final {
   static void awaitRead();
 
+  static void awaitCompile();
+
   static void doCompile(CapricaJobManager *jobManager);
+
+  static void removeFromNamespace(identifier_ref node);
 
   static void pushNamespaceFullContents(const std::string &namespaceName,
                                         caseless_unordered_identifier_ref_map<PapyrusCompilationNode *> &&map);

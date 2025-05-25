@@ -554,6 +554,10 @@ void PapyrusCompilationContext::pushNamespaceFullContents(
   rootNamespace.createNamespace(namespaceName, std::move(map));
 }
 
+void PapyrusCompilationContext::removeFromNamespace(identifier_ref node) {
+  rootNamespace.objects.erase(node);
+}
+
 void PapyrusCompilationContext::awaitRead() {
   rootNamespace.awaitRead();
 }
@@ -562,6 +566,10 @@ void PapyrusCompilationContext::doCompile(CapricaJobManager* jobManager) {
   rootNamespace.queueCompile();
   jobManager->setQueueInitialized();
   jobManager->enjoin();
+}
+
+void PapyrusCompilationContext::awaitCompile() {
+  rootNamespace.awaitCompile();
 }
 
 typedef caprica::caseless_unordered_identifier_map<
