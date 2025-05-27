@@ -67,8 +67,16 @@ PapyrusCompilationNode::NodeType PapyrusCompilationNode::getType() const {
   return type;
 }
 
-const allocators::ChainedPool& PapyrusCompilationNode::getData() const {
+ allocators::ChainedPool& PapyrusCompilationNode::getData() const {
   return pexWriter->getData();
+}
+
+pex::PexWriter* PapyrusCompilationNode::getPexWriter() const {
+  return pexWriter;
+}
+
+void PapyrusCompilationNode::createPexWriter() {
+  pexWriter = new pex::PexWriter();
 }
 
 allocators::AtomicChainedPool readAllocator { 1024 * 1024 * 4 };

@@ -99,7 +99,9 @@ struct PapyrusCompilationNode final {
   void awaitWrite();
 
   NodeType getType() const;
-  const allocators::ChainedPool& getData() const;
+  allocators::ChainedPool& getData() const;
+  pex::PexWriter* getPexWriter() const;
+  void createPexWriter();
 
 private:
   struct BaseJob : public CapricaJob {

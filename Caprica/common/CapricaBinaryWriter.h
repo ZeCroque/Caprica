@@ -89,7 +89,7 @@ struct CapricaBinaryWriter {
       append(val.data(), val.size());
   }
 
-  const allocators::ChainedPool& getData() const {
+  allocators::ChainedPool& getData() {
     return strm;
   }
 
